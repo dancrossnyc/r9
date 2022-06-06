@@ -144,13 +144,16 @@ fn objcopy() -> String {
 fn qemu_system_x86_64() -> String {
     env_or("QEMU", "qemu-system-x86_64")
 }
+fn arch() -> String {
+    env_or("ARCH", "x86_64")
+}
 fn target() -> String {
     env_or("TARGET", "x86_64-unknown-none-elf")
 }
 
 fn build(profile: Build) -> Result<()> {
     let mut cmd = Command::new(cargo());
-    cmd.current_dir(workspace());
+    cmd.current_dir(kernelpath());
     cmd.arg("build");
     #[rustfmt::skip]
     cmd.arg("-Z").arg("build-std=core");
@@ -165,7 +168,7 @@ fn build(profile: Build) -> Result<()> {
 
 fn expand(profile: Build) -> Result<()> {
     let mut cmd = Command::new(cargo());
-    cmd.current_dir(workspace());
+    cmd.current_dir(kernelpath());
     cmd.arg("rustc");
     cmd.arg("-Z").arg("build-std=core");
     cmd.arg("--target").arg(format!("lib/{}.json", target()));
@@ -180,7 +183,7 @@ fn expand(profile: Build) -> Result<()> {
 
 fn kasm(profile: Build) -> Result<()> {
     let mut cmd = Command::new(cargo());
-    cmd.current_dir(workspace());
+    cmd.current_dir(kernelpath());
     cmd.arg("build");
     cmd.arg("-Z").arg("build-std=core");
     cmd.arg("--target").arg(format!("lib/{}.json", target()));
@@ -200,7 +203,7 @@ fn dist(profile: Build) -> Result<()> {
     cmd.arg("--output-target=elf32-i386");
     cmd.arg(format!("target/{}/{}/x86_64", target(), profile.dir()));
     cmd.arg(format!("target/{}/{}/r9.elf32", target(), profile.dir()));
-    cmd.current_dir(workspace().parent().unwrap());
+    cmd.current_dir(workspace());
     let status = cmd.status()?;
     if !status.success() {
         return Err("objcopy failed".into());
@@ -222,7 +225,7 @@ fn test(profile: Build) -> Result<()> {
 
 fn clippy(profile: Build) -> Result<()> {
     let mut cmd = Command::new(cargo());
-    cmd.current_dir(workspace());
+    cmd.current_dir(kernelpath());
     cmd.arg("clippy");
     #[rustfmt::skip]
     cmd.arg("-Z").arg("build-std=core");
@@ -255,7 +258,7 @@ fn run(profile: Build) -> Result<()> {
         //.arg("-device")
         //.arg("ide-hd,drive=sdahci0,bus=ahci0.0")
         .arg("-kernel")
-        .arg(format!("../target/{}/{}/r9.elf32", target(), profile.dir()))
+        .arg(format!("target/{}/{}/r9.elf32", target(), profile.dir()))
         .current_dir(workspace())
         .status()?;
     if !status.success() {
@@ -277,7 +280,7 @@ fn accelrun(profile: Build) -> Result<()> {
         .arg("-m")
         .arg("8192")
         .arg("-kernel")
-        .arg(format!("../target/{}/{}/r9.elf32", target(), profile.dir()))
+        .arg(format!("target/{}/{}/r9.elf32", target(), profile.dir()))
         .current_dir(workspace())
         .status()?;
     if !status.success() {
@@ -298,11 +301,16 @@ fn clean() -> Result<()> {
 }
 
 fn workspace() -> PathBuf {
-    let mut cargopath = Path::new(&env!("CARGO_MANIFEST_DIR"))
+    Path::new(&env!("CARGO_MANIFEST_DIR"))
         .ancestors()
         .nth(1)
         .unwrap()
-        .to_path_buf();
-    cargopath.push("x86_64");
-    cargopath
+        .to_path_buf()
+}
+
+// Returns the path to the kernel package
+fn kernelpath() -> PathBuf {
+    let mut path = workspace();
+    path.push(arch());
+    path
 }
