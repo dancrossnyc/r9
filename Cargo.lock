@@ -135,15 +135,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "r9-x86_64"
-version = "0.1.0"
-dependencies = [
- "bitstruct",
- "port",
- "x86",
-]
-
-[[package]]
 name = "raw-cpuid"
 version = "10.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -230,6 +221,15 @@ dependencies = [
  "bit_field",
  "bitflags",
  "raw-cpuid",
+]
+
+[[package]]
+name = "x86_64"
+version = "0.1.0"
+dependencies = [
+ "bitstruct",
+ "port",
+ "x86",
 ]
 
 [[package]]

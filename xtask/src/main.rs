@@ -198,12 +198,8 @@ fn dist(profile: Build) -> Result<()> {
     let mut cmd = Command::new(objcopy());
     cmd.arg("--input-target=elf64-x86-64");
     cmd.arg("--output-target=elf32-i386");
-    cmd.arg(format!("target/{}/{}/r9-x86_64", target(), profile.dir()));
-    cmd.arg(format!(
-        "target/{}/{}/r9-x86_64.elf32",
-        target(),
-        profile.dir()
-    ));
+    cmd.arg(format!("target/{}/{}/x86_64", target(), profile.dir()));
+    cmd.arg(format!("target/{}/{}/r9.elf32", target(), profile.dir()));
     cmd.current_dir(workspace().parent().unwrap());
     let status = cmd.status()?;
     if !status.success() {
@@ -259,11 +255,7 @@ fn run(profile: Build) -> Result<()> {
         //.arg("-device")
         //.arg("ide-hd,drive=sdahci0,bus=ahci0.0")
         .arg("-kernel")
-        .arg(format!(
-            "../target/{}/{}/r9-x86_64.elf32",
-            target(),
-            profile.dir()
-        ))
+        .arg(format!("../target/{}/{}/r9.elf32", target(), profile.dir()))
         .current_dir(workspace())
         .status()?;
     if !status.success() {
@@ -285,11 +277,7 @@ fn accelrun(profile: Build) -> Result<()> {
         .arg("-m")
         .arg("8192")
         .arg("-kernel")
-        .arg(format!(
-            "../target/{}/{}/r9-x86_64.elf32",
-            target(),
-            profile.dir()
-        ))
+        .arg(format!("../target/{}/{}/r9.elf32", target(), profile.dir()))
         .current_dir(workspace())
         .status()?;
     if !status.success() {
