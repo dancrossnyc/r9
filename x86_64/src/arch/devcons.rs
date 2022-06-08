@@ -1,31 +1,30 @@
 // Racy to start.
 
 use core::fmt;
-use port::devcons::ConsoleDriver;
+use port::devcons::{Console, Uart};
 
-struct Console {
+struct Uart16550 {
     port: u16,
 }
 
-impl ConsoleDriver for Console {
-    fn uartputb(&self, b: u8) {
+impl Uart for Uart16550 {
+    fn putb(&self, b: u8) {
         crate::x86_64::uart16550::putb(self.port, b);
     }
 }
 
-// It would be nice if most the below code was in port....
+static mut CONSOLE: Console<Uart16550> = Console {
+    uart: Uart16550 { port: 0x3f8 },
+};
 
-impl fmt::Write for Console {
-    fn write_str(&mut self, s: &str) -> fmt::Result {
-        self.putstr(s);
-        Ok(())
-    }
-}
+// It would be nice if most the below code was in port....
 
 pub fn print(args: fmt::Arguments) {
     use core::fmt::Write;
-    let mut cons = Console { port: 0x3f8 };
-    cons.write_fmt(args).unwrap();
+    // Todo make threadsafe
+    unsafe {
+        CONSOLE.write_fmt(args).unwrap();
+    }
 }
 
 #[macro_export]

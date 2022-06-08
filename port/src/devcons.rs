@@ -1,4 +1,5 @@
 use crate::mcslock::{Lock, LockNode};
+use core::fmt;
 
 const fn ctrl(b: u8) -> u8 {
     b - b'@'
@@ -15,20 +16,26 @@ const CTLP: u8 = ctrl(b'P');
 #[allow(dead_code)]
 const CTLU: u8 = ctrl(b'U');
 
-pub trait ConsoleDriver {
-    fn uartputb(&self, b: u8);
+pub trait Uart {
+    fn putb(&self, b: u8);
+}
 
-    fn putb(&mut self, b: u8) {
+pub struct Console<T: Uart> {
+    pub uart: T,
+}
+
+impl<T: Uart> Console<T> {
+    pub fn putb(&mut self, b: u8) {
         if b == b'\n' {
-            self.uartputb(b'\r');
+            self.uart.putb(b'\r');
         } else if b == BACKSPACE {
-            self.uartputb(b);
-            self.uartputb(b' ');
+            self.uart.putb(b);
+            self.uart.putb(b' ');
         }
-        self.uartputb(b);
+        self.uart.putb(b);
     }
 
-    fn putstr(&mut self, s: &str) {
+    pub fn putstr(&mut self, s: &str) {
         static LOCK: Lock<()> = Lock::new("println", ());
         // XXX: Just for testing.
         static mut NODE: LockNode = LockNode::new();
@@ -36,5 +43,12 @@ pub trait ConsoleDriver {
         for b in s.bytes() {
             self.putb(b);
         }
+    }
+}
+
+impl<T: Uart> fmt::Write for Console<T> {
+    fn write_str(&mut self, s: &str) -> fmt::Result {
+        self.putstr(s);
+        Ok(())
     }
 }
