@@ -21,10 +21,14 @@ pub trait Uart {
 }
 
 pub struct Console<T: Uart> {
-    pub uart: T,
+    uart: T,
 }
 
 impl<T: Uart> Console<T> {
+    pub fn new(uart: T) -> Self {
+        Self { uart: uart }
+    }
+
     pub fn putb(&mut self, b: u8) {
         if b == b'\n' {
             self.uart.putb(b'\r');

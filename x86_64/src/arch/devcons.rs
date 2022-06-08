@@ -13,18 +13,12 @@ impl Uart for Uart16550 {
     }
 }
 
-static mut CONSOLE: Console<Uart16550> = Console {
-    uart: Uart16550 { port: 0x3f8 },
-};
-
 // It would be nice if most the below code was in port....
 
 pub fn print(args: fmt::Arguments) {
     use core::fmt::Write;
-    // Todo make threadsafe
-    unsafe {
-        CONSOLE.write_fmt(args).unwrap();
-    }
+    let mut cons = Console::new(Uart16550 { port: 0x3f8 });
+    cons.write_fmt(args).unwrap();
 }
 
 #[macro_export]
