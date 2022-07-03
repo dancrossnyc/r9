@@ -121,8 +121,12 @@ fn objcopy() -> String {
     };
     env_or("OBJCOPY", &llvm_objcopy)
 }
-fn qemu_system_x86_64() -> String {
-    env_or("QEMU", "qemu-system-x86_64")
+fn qemu_system() -> String {
+    let defaultqemu = match arch().as_str() {
+        "aarch64" => "qemu-system-aarch64",
+        _ => "qemu-system-x86_64",
+    };
+    env_or("QEMU", defaultqemu)
 }
 fn arch() -> String {
     env_or("ARCH", "x86_64")
@@ -137,10 +141,23 @@ fn build(profile: Build) -> Result<()> {
     cmd.arg("build");
     #[rustfmt::skip]
     cmd.arg("-Z").arg("build-std=core,alloc");
+    cmd.arg("--target").arg(format!("lib/{}.json", target()));
     cmd.arg("--workspace");
     cmd.arg("--exclude").arg("xtask");
-    cmd.arg("--target").arg(format!("lib/{}.json", target()));
+
+    // Exclude architectures other than the one being built
+    match arch().as_str() {
+        "x86_64" => {
+            cmd.arg("--exclude").arg("aarch64");
+        }
+        "aarch64" => {
+            cmd.arg("--exclude").arg("x86_64");
+        }
+        _ => {}
+    }
+
     profile.add_build_arg(&mut cmd);
+    println!("{:?}", cmd);
     let status = cmd.status()?;
     if !status.success() {
         return Err("build kernel failed".into());
@@ -183,15 +200,18 @@ fn kasm(profile: Build) -> Result<()> {
 
 fn dist(profile: Build) -> Result<()> {
     build(profile)?;
-    let mut cmd = Command::new(objcopy());
-    cmd.arg("--input-target=elf64-x86-64");
-    cmd.arg("--output-target=elf32-i386");
-    cmd.arg(format!("target/{}/{}/x86_64", target(), profile.dir()));
-    cmd.arg(format!("target/{}/{}/r9.elf32", target(), profile.dir()));
-    cmd.current_dir(workspace());
-    let status = cmd.status()?;
-    if !status.success() {
-        return Err("objcopy failed".into());
+
+    if arch() == "x86_64" {
+        let mut cmd = Command::new(objcopy());
+        cmd.arg("--input-target=elf64-x86-64");
+        cmd.arg("--output-target=elf32-i386");
+        cmd.arg(format!("target/{}/{}/x86_64", target(), profile.dir()));
+        cmd.arg(format!("target/{}/{}/r9.elf32", target(), profile.dir()));
+        cmd.current_dir(workspace());
+        let status = cmd.status()?;
+        if !status.success() {
+            return Err("objcopy failed".into());
+        }
     }
     Ok(())
 }
@@ -222,36 +242,59 @@ fn clippy(profile: Build) -> Result<()> {
 
 fn run(profile: Build) -> Result<()> {
     dist(profile)?;
-    let status = Command::new(qemu_system_x86_64())
-        .arg("-nographic")
-        //.arg("-curses")
-        .arg("-M")
-        .arg("q35")
-        .arg("-cpu")
-        .arg("qemu64,pdpe1gb,xsaveopt,fsgsbase,apic,msr")
-        .arg("-smp")
-        .arg("8")
-        .arg("-m")
-        .arg("8192")
-        //.arg("-device")
-        //.arg("ahci,id=ahci0")
-        //.arg("-drive")
-        //.arg("id=sdahci0,file=sdahci0.img,if=none")
-        //.arg("-device")
-        //.arg("ide-hd,drive=sdahci0,bus=ahci0.0")
-        .arg("-kernel")
-        .arg(format!("target/{}/{}/r9.elf32", target(), profile.dir()))
-        .current_dir(workspace())
-        .status()?;
-    if !status.success() {
-        return Err("qemu failed".into());
-    }
+
+    match arch().as_str() {
+        "x86_64" => {
+            let status = Command::new(qemu_system())
+                .arg("-nographic")
+                //.arg("-curses")
+                .arg("-M")
+                .arg("q35")
+                .arg("-cpu")
+                .arg("qemu64,pdpe1gb,xsaveopt,fsgsbase,apic,msr")
+                .arg("-smp")
+                .arg("8")
+                .arg("-m")
+                .arg("8192")
+                //.arg("-device")
+                //.arg("ahci,id=ahci0")
+                //.arg("-drive")
+                //.arg("id=sdahci0,file=sdahci0.img,if=none")
+                //.arg("-device")
+                //.arg("ide-hd,drive=sdahci0,bus=ahci0.0")
+                .arg("-kernel")
+                .arg(format!("target/{}/{}/r9.elf32", target(), profile.dir()))
+                .current_dir(workspace())
+                .status()?;
+            if !status.success() {
+                return Err("qemu failed".into());
+            }
+        }
+        "aarch64" => {
+            let status = Command::new(qemu_system())
+                .arg("-nographic")
+                //.arg("-curses")
+                .arg("-M")
+                .arg("raspi3b")
+                .arg("-kernel")
+                .arg(format!("target/{}/{}/aarch64", target(), profile.dir()))
+                .current_dir(workspace())
+                .status()?;
+            if !status.success() {
+                return Err("qemu failed".into());
+            }
+        }
+        _ => {
+            return Err("Unsupported architecture".into());
+        }
+    };
+
     Ok(())
 }
 
 fn accelrun(profile: Build) -> Result<()> {
     dist(profile)?;
-    let status = Command::new(qemu_system_x86_64())
+    let status = Command::new(qemu_system())
         .arg("-nographic")
         .arg("-accel")
         .arg("kvm")
