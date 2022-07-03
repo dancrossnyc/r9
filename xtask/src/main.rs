@@ -144,20 +144,8 @@ fn build(profile: Build) -> Result<()> {
     cmd.arg("--target").arg(format!("lib/{}.json", target()));
     cmd.arg("--workspace");
     cmd.arg("--exclude").arg("xtask");
-
-    // Exclude architectures other than the one being built
-    match arch().as_str() {
-        "x86_64" => {
-            cmd.arg("--exclude").arg("aarch64");
-        }
-        "aarch64" => {
-            cmd.arg("--exclude").arg("x86_64");
-        }
-        _ => {}
-    }
-
+    exclude_other_arches(&mut cmd);
     profile.add_build_arg(&mut cmd);
-    println!("{:?}", cmd);
     let status = cmd.status()?;
     if !status.success() {
         return Err("build kernel failed".into());
@@ -324,4 +312,19 @@ fn clean() -> Result<()> {
 
 fn workspace() -> PathBuf {
     Path::new(&env!("CARGO_MANIFEST_DIR")).ancestors().nth(1).unwrap().to_path_buf()
+}
+
+// Exclude architectures other than the one being built
+fn exclude_other_arches(cmd: &mut Command) {
+    match arch().as_str() {
+        "x86_64" => {
+            println!("excluding aarch64");
+            cmd.arg("--exclude").arg("aarch64");
+        }
+        "aarch64" => {
+            println!("excluding x86_64");
+            cmd.arg("--exclude").arg("x86_64");
+        }
+        _ => {}
+    }
 }
