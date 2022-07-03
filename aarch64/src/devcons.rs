@@ -244,9 +244,7 @@ impl Uart for Pl011Uart {
 }
 
 pub fn init() {
-    static mut UART: Pl011Uart = Pl011Uart {
-        mmiobase: MMIO_BASE_BCM2837,
-    };
+    static mut UART: Pl011Uart = Pl011Uart { mmiobase: MMIO_BASE_BCM2837 };
     unsafe {
         UART.init();
     };

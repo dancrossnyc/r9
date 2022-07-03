@@ -208,6 +208,8 @@ fn test(profile: Build) -> Result<()> {
     let mut cmd = Command::new(cargo());
     cmd.current_dir(workspace());
     cmd.arg("test");
+    cmd.arg("--workspace");
+    exclude_other_arches(&mut cmd);
     profile.add_build_arg(&mut cmd);
     let status = cmd.status()?;
     if !status.success() {

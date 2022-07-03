@@ -10,9 +10,21 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
-
+  build-x86_64:
     runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build
+      run: cargo xtask build
+    - name: Run tests
+      run: cargo xtask test
+
+  build-aarch64:
+    runs-on: ubuntu-latest
+    env:
+      ARCH: aarch64
+      TARGET: aarch64-unknown-none-elf
 
     steps:
     - uses: actions/checkout@v3

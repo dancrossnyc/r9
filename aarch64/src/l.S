@@ -7,7 +7,7 @@ start:
 	// All cores other than 0 should just hang
     mrs     x1, mpidr_el1
     and     x1, x1, #3
-    cbnz    x1, hang
+    cbnz    x1, 5f
 	
 	// On the main core, so set up the initial stack
 	ldr	x5, =start
@@ -24,6 +24,6 @@ start:
 
 4:	bl main9
 
-hang:
+5:
 	wfe
-	b hang
+	b 5b
