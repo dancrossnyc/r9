@@ -32,31 +32,31 @@ use core::ptr::{read_volatile, write_volatile};
 //     https://wiki.osdev.org/Detecting_Raspberry_Pi_Board
 // - Break out mailbox, gpio code
 
-const MMIO_BASE_BCM2837: u32 = 0x3f000000;
-//const MMIO_BASE_BCM2711: u32 = 0xfe000000;
+const MMIO_BASE_BCM2837: u64 = 0x3f00_0000;
+//const MMIO_BASE_BCM2711: u64 = 0xfe00_0000;
 
-const GPIO_BASE: u32 = 0x200000;
-const GPPUD: u32 = GPIO_BASE + 0x94;
-const GPPUDCLK0: u32 = GPIO_BASE + 0x98;
+const GPIO_BASE: u64 = 0x20_0000;
+const GPPUD: u64 = GPIO_BASE + 0x94;
+const GPPUDCLK0: u64 = GPIO_BASE + 0x98;
 
 // PL011 UART 0 Registers
-const UART0_BASE: u32 = GPIO_BASE + 0x1000;
-const UART0_DR: u32 = UART0_BASE + 0x00; // Data register
-const UART0_FR: u32 = UART0_BASE + 0x18; // Flag register
-const UART0_IBRD: u32 = UART0_BASE + 0x24; // Integer baud rate divisor
-const UART0_FBRD: u32 = UART0_BASE + 0x28; // Fractional baud rate divisor
-const UART0_LCRH: u32 = UART0_BASE + 0x2c; // Line control register
-const UART0_CR: u32 = UART0_BASE + 0x30; // Control register
-const UART0_IMSC: u32 = UART0_BASE + 0x38; // Interrupt mask set clear register
-const UART0_ICR: u32 = UART0_BASE + 0x44; // Interrupt clear register
+const UART0_BASE: u64 = GPIO_BASE + 0x1000;
+const UART0_DR: u64 = UART0_BASE + 0x00; // Data register
+const UART0_FR: u64 = UART0_BASE + 0x18; // Flag register
+const UART0_IBRD: u64 = UART0_BASE + 0x24; // Integer baud rate divisor
+const UART0_FBRD: u64 = UART0_BASE + 0x28; // Fractional baud rate divisor
+const UART0_LCRH: u64 = UART0_BASE + 0x2c; // Line control register
+const UART0_CR: u64 = UART0_BASE + 0x30; // Control register
+const UART0_IMSC: u64 = UART0_BASE + 0x38; // Interrupt mask set clear register
+const UART0_ICR: u64 = UART0_BASE + 0x44; // Interrupt clear register
 
-const MBOX_BASE: u32 = 0xb880;
-const MBOX_READ: u32 = MBOX_BASE + 0x00;
-const MBOX_STATUS: u32 = MBOX_BASE + 0x18;
-const MBOX_WRITE: u32 = MBOX_BASE + 0x20;
+const MBOX_BASE: u64 = 0xb880;
+const MBOX_READ: u64 = MBOX_BASE + 0x00;
+const MBOX_STATUS: u64 = MBOX_BASE + 0x18;
+const MBOX_WRITE: u64 = MBOX_BASE + 0x20;
 
-const MBOX_FULL: u32 = 0x80000000;
-const MBOX_EMPTY: u32 = 0x40000000;
+const MBOX_FULL: u32 = 0x8000_0000;
+const MBOX_EMPTY: u32 = 0x4000_0000;
 
 // Delay for count cycles
 fn delay(count: u32) {
@@ -145,7 +145,7 @@ enum GpioPull {
 }
 
 struct Pl011Uart {
-    mmiobase: u32,
+    mmiobase: u64,
 }
 
 impl Pl011Uart {
@@ -173,7 +173,7 @@ impl Pl011Uart {
         let r = (uart_mbox_u32 & !0xF) | (channel as u32);
         self.mmiowrite(MBOX_WRITE, r);
 
-        // Wait for repsonse
+        // Wait for response
         loop {
             while (self.mmioread(MBOX_STATUS) & MBOX_EMPTY) != 0 {}
             let response = self.mmioread(MBOX_READ);
@@ -200,12 +200,12 @@ impl Pl011Uart {
         self.mmiowrite(UART0_CR, 0x81);
     }
 
-    fn mmiowrite(&self, reg: u32, val: u32) {
+    fn mmiowrite(&self, reg: u64, val: u32) {
         let dst = self.mmiobase + reg;
         unsafe { write_volatile(dst as *mut u32, val) }
     }
 
-    fn mmioread(&self, reg: u32) -> u32 {
+    fn mmioread(&self, reg: u64) -> u32 {
         let dst = self.mmiobase + reg;
         unsafe { read_volatile(dst as *const u32) }
     }
@@ -214,7 +214,7 @@ impl Pl011Uart {
         // The GPIO pull up/down bits are spread across consecutive registers GPPUDCLK0 to GPPUDCLK1
         // GPPUDCLK0: pins  0-31
         // GPPUDCLK1: pins 32-53
-        let reg_offset = pin / 32;
+        let reg_offset = pin as u64 / 32;
         // Number of bits to shift pull, in order to affect the required pin (just 1 bit)
         let pud_bit = 1 << (pin % 32);
         let gppud_reg = GPPUD;
