@@ -5,25 +5,24 @@
 
 start:
 	// All cores other than 0 should just hang
-	mrs     x1, mpidr_el1
-	and     x1, x1, #3
-	cbnz    x1, 5f
+	mrs     x0, mpidr_el1
+	and     x0, x0, #0xff
+	cbnz    x0, hang
 	
 	// On the main core, so set up the initial stack
-	ldr	x5, =start
-	add	x5, x5, #4096
-	mov	sp, x5
+	ldr	x0, =start
+	add	x0, x0, #4096
+	mov	sp, x0
 
-	// Clean the BSS section
-	ldr     x1, =bss     		// Start address
-	ldr     w2, =end  		// End of bss
-3:  	cbz     w2, 4f              	// Quit loop if zero
-	str     xzr, [x1], #8
-	sub     w2, w2, #1
-	cbnz    w2, 3b              	// Loop if non-zero
+	// Clear bss
+	ldr     x0, =bss     		// Start address
+	ldr     x1, =end  		// End of bss
+clearbss:
+  	str     xzr, [x0], #8
+	cmp	x0, x1
+	b.ne	clearbss
 
-4:	bl	main9
+	bl	main9
 
-5:
-	wfe
-	b	5b
+hang:	wfe
+	b	hang
