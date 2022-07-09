@@ -10,20 +10,20 @@ start:
 	cbnz    x1, 5f
 	
 	// On the main core, so set up the initial stack
-	ldr		x5, =start
-	add		x5, x5, #4096
-	mov		sp, x5
+	ldr	x5, =start
+	add	x5, x5, #4096
+	mov	sp, x5
 
 	// Clean the BSS section
 	ldr     x1, =bss     		// Start address
-	ldr     w2, =end  		    // End of bss
-3:  cbz     w2, 4f              // Quit loop if zero
+	ldr     w2, =end  		// End of bss
+3:  	cbz     w2, 4f              	// Quit loop if zero
 	str     xzr, [x1], #8
 	sub     w2, w2, #1
-	cbnz    w2, 3b              // Loop if non-zero
+	cbnz    w2, 3b              	// Loop if non-zero
 
-4:	bl main9
+4:	bl	main9
 
 5:
 	wfe
-	b		5b
+	b	5b
