@@ -10,9 +10,9 @@ start:
     cbnz    x1, 5f
 	
 	// On the main core, so set up the initial stack
-	ldr	x5, =start
-	add	x5, x5, #4096
-	mov	sp, x5
+	ldr		x5, =start
+	add		x5, x5, #4096
+	mov		sp, x5
 
 	// Clean the BSS section
     ldr     x1, =bss     		// Start address
@@ -26,4 +26,4 @@ start:
 
 5:
 	wfe
-	b 5b
+	b		5b
