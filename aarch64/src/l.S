@@ -16,7 +16,7 @@ start:
 
 	// Clean the BSS section
     ldr     x1, =bss     		// Start address
-    ldr     w2, =ebss  		    // Size of the section
+    ldr     w2, =end  		    // End of bss
 3:  cbz     w2, 4f              // Quit loop if zero
     str     xzr, [x1], #8
     sub     w2, w2, #1

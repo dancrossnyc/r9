@@ -53,7 +53,6 @@ SECTIONS {
 		*(COMMON)
 		. = ALIGN(2097152);
 	}
-	PROVIDE(ebss = .);
 	PROVIDE(end = .);
 
 	/DISCARD/ : {
