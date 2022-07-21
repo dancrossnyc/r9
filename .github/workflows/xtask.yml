@@ -22,9 +22,6 @@ jobs:
 
   build-aarch64:
     runs-on: ubuntu-latest
-    env:
-      ARCH: aarch64
-      TARGET: aarch64-unknown-none-elf
 
     steps:
     - uses: actions/checkout@v3
