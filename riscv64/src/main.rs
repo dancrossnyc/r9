@@ -21,7 +21,10 @@ pub extern "C" fn main9(hartid: usize, opaque: usize) -> ! {
     println!();
     println!("r9 from the Internet");
     println!("Domain0 Boot HART = {}, Domain0 Next Arg1 = {:#x}", hartid, opaque);
+    #[cfg(not(test))]
     sbi::shutdown();
+    #[cfg(test)]
+    loop {}
 }
 
 #[cfg(not(test))]
@@ -30,5 +33,6 @@ core::arch::global_asm!(include_str!("l.S"), stack= sym BOOT_STACK, len_per_hart
 #[macro_use]
 mod devcons;
 mod runtime;
+#[cfg(not(test))]
 mod sbi;
 mod uart16550;
