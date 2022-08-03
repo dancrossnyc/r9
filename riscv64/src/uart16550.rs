@@ -38,7 +38,7 @@ impl Uart16550 {
             ptr.add(3).write_volatile(lcr); // set word length
             ptr.add(2).write_volatile(1); // enable FIFO
             ptr.add(1).write_volatile(1); // enable receiver interrupts
-            let divisor: u16 = (22_279_00 / (baud * 16)) as u16; // set baud rate
+            let divisor: u16 = (2_227_900 / (baud * 16)) as u16; // set baud rate
             let divisor_least: u8 = (divisor & 0xff).try_into().unwrap();
             let divisor_most: u8 = (divisor >> 8).try_into().unwrap();
             ptr.add(3).write_volatile(lcr | 1 << 7); // access DLAB
