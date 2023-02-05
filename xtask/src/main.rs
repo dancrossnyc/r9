@@ -35,11 +35,11 @@ struct BuildParams {
 
 impl BuildParams {
     fn new(matches: &clap::ArgMatches) -> Self {
-        let profile =
-            if matches.get_flag("release") { Profile::Release } else { Profile::Debug };
+        let profile = if matches.get_flag("release") { Profile::Release } else { Profile::Debug };
         let verbose = matches.get_flag("verbose");
         let arch = matches.try_get_one("arch").ok().flatten().unwrap_or(&Arch::X86_64);
-        let wait_for_gdb = matches.try_contains_id("gdb").unwrap_or(false) && matches.get_flag("gdb");
+        let wait_for_gdb =
+            matches.try_contains_id("gdb").unwrap_or(false) && matches.get_flag("gdb");
 
         Self { arch: *arch, profile: profile, verbose: verbose, wait_for_gdb: wait_for_gdb }
     }
@@ -297,7 +297,24 @@ fn dist(build_params: &BuildParams) -> Result<()> {
             }
         }
         Arch::Riscv64 => {
-            return Err("unsupported".into());
+            // Qemu needs a flat binary in order to handle device tree files correctly
+            let mut cmd = Command::new(objcopy());
+            cmd.arg("-O");
+            cmd.arg("binary");
+            cmd.arg(format!("target/{}/{}/riscv64", build_params.target(), build_params.dir()));
+            cmd.arg(format!(
+                "target/{}/{}/riscv64-qemu",
+                build_params.target(),
+                build_params.dir()
+            ));
+            cmd.current_dir(workspace());
+            if build_params.verbose {
+                println!("Executing {:?}", cmd);
+            }
+            let status = cmd.status()?;
+            if !status.success() {
+                return Err("objcopy failed".into());
+            }
         }
     };
 
