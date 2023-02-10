@@ -7,8 +7,8 @@
 #![forbid(unsafe_op_in_unsafe_fn)]
 
 mod devcons;
-mod interrupts;
 mod registers;
+mod trap;
 
 use port::fdt::DeviceTree;
 use port::println;
@@ -18,7 +18,7 @@ core::arch::global_asm!(include_str!("l.S"));
 
 #[no_mangle]
 pub extern "C" fn main9(dtb_ptr: u64) {
-    interrupts::init();
+    trap::init();
 
     let dt = unsafe { DeviceTree::from_u64(dtb_ptr).unwrap() };
     devcons::init(&dt);
