@@ -87,7 +87,7 @@
 	ldp	x24, x25, [sp, #16 * 12]
 	ldp	x26, x27, [sp, #16 * 13]
 	ldp	x28, x29, [sp, #16 * 14]
-	ldr	x30, [sp, #16 * 14]
+	ldr	x30, [sp, #16 * 15]
 
 	// Remaining stack frame consists of systems registers we can just ignore
 	add	sp, sp, #288
@@ -108,7 +108,7 @@ exception_vectors:
 
 	// Current EL with SPx
 	ventry	sync_invalid_el1h			// Synchronous EL1h
-	ventry	handle_el1_irq				// IRQ EL1h
+	ventry	irq_invalid_el1h			// IRQ EL1h
 	ventry	fiq_invalid_el1h			// FIQ EL1h
 	ventry	error_invalid_el1h			// Error EL1h
 
@@ -139,7 +139,7 @@ error_invalid_el1t:
 sync_invalid_el1h:
 	handle_interrupt  SYNC_INVALID_EL1h
 
-handle_el1_irq:
+irq_invalid_el1h:
 	handle_interrupt  IRQ_INVALID_EL1h
 
 fiq_invalid_el1h:
