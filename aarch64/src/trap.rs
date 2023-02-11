@@ -5,17 +5,22 @@ use port::println;
 core::arch::global_asm!(include_str!("trap.S"));
 
 pub fn init() {
-    unsafe { init_interrupts() };
-}
-
-extern "C" {
-    fn init_interrupts();
+    #[cfg(not(test))]
+    unsafe {
+        // Set up a vector table for any exception that is taken to EL1, then enable IRQ
+        core::arch::asm!(
+            "adr {tmp}, exception_vectors",
+            "msr vbar_el1, {tmp}",
+            "msr DAIFClr, #2",
+            tmp = out(reg) _,
+        );
+    }
 }
 
 /// Register frame at time interrupt was taken
 #[derive(Copy, Clone, Debug)]
 #[repr(C)]
-pub struct InterruptFrame {
+pub struct TrapFrame {
     x0: u64,
     x1: u64,
     x2: u64,
@@ -54,11 +59,11 @@ pub struct InterruptFrame {
 }
 
 #[no_mangle]
-pub extern "C" fn trap_unsafe(frame: *mut InterruptFrame) {
+pub extern "C" fn trap_unsafe(frame: *mut TrapFrame) {
     unsafe { trap(&mut *frame) }
 }
 
-fn trap(frame: &mut InterruptFrame) {
+fn trap(frame: &mut TrapFrame) {
     // Just print out the frame and loop for now
     println!("{:x?}", frame);
     loop {}

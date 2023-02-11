@@ -20,8 +20,9 @@
 .equ	FIQ_INVALID_EL0_32,	14
 .equ	ERROR_INVALID_EL0_32,	15
 
+// Ventry aligns to 128 bytes and branches to label, and is used for the interrupt vector table
 .macro	ventry	label
-.align	7
+.balign	128
 	b	\label
 .endm
 
@@ -29,7 +30,7 @@
 // - x0-28
 // - x29 (Frame pointer)
 // - x30 (Link register)
-// We additionally save the registers below, so that they're avaialble via the InterruptFrame
+// We additionally save the registers below, so that they're availalble via the TrapFrame
 // - ESR_EL1 (Exception syndrome register EL1)
 // - ELR_EL1 (Exception link register EL1)
 // - FAR_EL1 (Fault address register EL1)
@@ -66,7 +67,7 @@
 	ldr	x3, =\type
 	str	x3, [sp, #16 * 17]
 
-	// Pass pointer to InterruptFrame (on stack) as the first arg
+	// Pass pointer to TrapFrame (on stack) as the first arg
 	mov	x0, sp
 	bl	trap_unsafe
 
@@ -94,18 +95,10 @@
 	eret
 .endm
 
-/// Set up a vector table for any exception that is taken to EL1.
-.globl	init_interrupts
-init_interrupts:
-	adr	x0, exception_vectors
-	msr	vbar_el1, x0
-	// Enable IRQ
-	msr	DAIFClr, #2
-	ret
-
 /// The exception vector table for exceptions taken to EL1.
 /// Each entry is 16 instructions/128 bytes.
-.align	11
+/// Ventry handles alignment of individual entries.
+.balign	2048
 exception_vectors:
 	// Current EL with SP0
 	ventry	sync_invalid_el1t			// Synchronous EL1t
