@@ -25,6 +25,12 @@ STACKSZ = 4096*4
 
 .equ	CPACR_EL1_FPEN,		(1<<21) | (1<<20)	// Don't trap FPU instr at EL1,0
 
+// This defines the kernel's virtual address location.  If should be consistent
+// across architectures.
+.equ	KZERO,			0xffff800000000000
+.equ	MiB,			(1<<20)
+.equ	KTZERO,			(KZERO+2*MiB)		// Virtual base of kernel text
+
 .section .boottext, "awx"
 .globl start
 start:
@@ -92,7 +98,10 @@ el1:	// In EL1, so set up the initial stack
 	cmp	x0, x1
 	b.ne	1b
 
-	// Finally jump to rust
+	// Finally jump to rust.  main9 is in the higher half, so before we
+	// can jump there, we need to enable the MMU and map the physical
+	// range where the sections are loaded to the virtual addresses used.
+
 	mov	x0, x30			// DTB pointer
 	bl	main9
 
