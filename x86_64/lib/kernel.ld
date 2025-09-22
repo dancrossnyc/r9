@@ -12,30 +12,24 @@ SECTIONS {
 	 */
 	. = ${LOAD-ADDRESS};
 
-	PROVIDE(boottext = .);
-	.text.boot : ALIGN(4096) {
-		*(.boottext .bootdata)
-		. = ALIGN(4096);
-		PROVIDE(eboottext = .);
-		. = ALIGN(2097152);
-		PROVIDE(esys = .);
-	}
-
 	PROVIDE(text = .);
 	.text : ALIGN(4096) {
-		*(.text* .stub .gnu.linkonce.t.*)
+		*(.text.boot)
+		*(.*text* .stub .gnu.linkonce.t.*)
+		. = ALIGN(4096);
+		*(.trap*)
 		. = ALIGN(2097152);
 		PROVIDE(etext = .);
 	}
 
 	.rodata : ALIGN(4096) {
-		*(.rodata* .gnu.linkonce.r.*)
+		*(.*rodata* .gnu.linkonce.r.*)
 		. = ALIGN(2097152);
 		PROVIDE(erodata = .);
 	}
 
 	.data : ALIGN(4096) {
-		*(.data*)
+		*(.*data*)
 	}
 	.got : ALIGN(4096) {
 		*(.got)
@@ -46,13 +40,13 @@ SECTIONS {
 	PROVIDE(edata = .);
 
 	.bss : ALIGN(4096) {
-		*(.bss*)
 		*(COMMON)
+		*(.*bss*)
 		. = ALIGN(2097152);
 	}
 	PROVIDE(end = .);
 
 	/DISCARD/ : {
-		*(.eh_frame .note.GNU-stack)
+		*(.eh_frame* .note*)
 	}
 }

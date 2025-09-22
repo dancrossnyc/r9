@@ -1,4 +1,5 @@
 #![feature(alloc_error_handler)]
+#![feature(fn_align)]
 #![feature(sync_unsafe_cell)]
 #![cfg_attr(not(any(test)), no_std)]
 #![cfg_attr(not(test), no_main)]
@@ -6,11 +7,14 @@
 #![forbid(unsafe_op_in_unsafe_fn)]
 
 mod allocator;
+mod cpu;
 mod dat;
 mod devcons;
 mod pio;
 mod proc;
+mod trap;
 mod uart16550;
+mod vsvm;
 
 use proc::{Label, swtch};
 
@@ -32,8 +36,8 @@ fn jumpback() {
     }
 }
 
-#[unsafe(no_mangle)]
-pub extern "C" fn main9() {
+#[cfg_attr(not(test), unsafe(no_mangle))]
+pub extern "C" fn main(mach: &mut dat::Mach, mbdata: u64) {
     devcons::init();
     println!();
     println!("r9 from the Internet");

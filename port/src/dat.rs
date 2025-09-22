@@ -97,3 +97,7 @@ pub struct Walkqid {
     _clone: Arc<Chan>,
     _qids: [Qid],
 }
+
+pub struct Proc {
+    //sched: arch::Label,
+}
